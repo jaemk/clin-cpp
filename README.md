@@ -1,4 +1,4 @@
-# clin
+# clin [![Build Status](https://travis-ci.org/jaemk/clin-cpp.svg?branch=master)](https://travis-ci.org/jaemk/clin-cpp)
 
 `clin` runs a given command and triggers a desktop notification on command completion.
 
