@@ -1,16 +1,15 @@
 CXX = g++
 
-# put pre-processor settings (-I, -D, etc) here
+# pre-processor settings (-I, -D, etc)
 CPPFLAGS =
 
-# put compiler settings here
-CXXFLAGS = -Wall -Wextra -std=c++11 -O3
+# compiler settings
+CXXFLAGS = -Wall -Wextra -pedantic -Wundef -Wno-unused -std=c++11 -O2
 
-# put linker settings here
+# linker settings
 LDFLAGS =
 
 PKGCONFIG = `pkg-config --cflags --libs libnotify`
-
 BUILD_DIR = target
 ARTIFACT = clin
 
