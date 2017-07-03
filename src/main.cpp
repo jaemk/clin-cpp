@@ -1,54 +1,91 @@
 #include <libnotify/notify.h>
 #include <cstring>
 #include <iostream>
+#include <sstream>
+#include <vector>
 
 
-bool should_help(int argc, char* argv[]) {
-    if (argc == 1)
-        return true;
+struct Args {
+    bool help = false;
+    std::string command = "";
+    std::string message = "";
+};
 
-    for (int i = 1; i < argc; i++) {
-        if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
+
+template<typename ... T>
+bool arg_in(const char* argument, const T&... _opts) {
+    std::vector<std::string> opts = {_opts...};
+    for (auto opt : opts) {
+        if (std::strcmp(argument, opt.c_str()) == 0)
             return true;
-        }
     }
     return false;
 }
 
 
+Args parse_args(int argc, char* argv[]) {
+    Args args;
+    if (argc == 1) {
+        args.help = true;
+        return args;
+    }
+
+    for (int i = 1; i < argc; i++) {
+        const char* _arg = argv[i];
+        if (arg_in(_arg, "--help", "-h")) {
+            args.help = true;
+            return args;
+        } else if (i == 1) {
+            args.command = _arg;
+        } else if (i == 2) {
+            args.message = _arg;
+        }
+    }
+
+    return args;
+}
+
+
 void show_help() {
     std::string text =
-"** clin: cli-notify **\n\n"
-" clin [command] [notification-message]\n"
-" ex. clin 'echo hello!' 'Done echoing!'\n";
+"CLIN (cli-notify) 0.1\n"
+"James K. <james.kominick@gmail.com>\n"
+"Command Completion Notifications\n"
+"\n"
+"USAGE:\n"
+"    clin [-h, --help] command [notification-message]\n"
+"\n"
+"FLAGS:\n"
+"    -h, --help: Prints help information\n"
+"";
     std::cout << text;
 }
 
 
 int main(int argc, char* argv[]) {
-    if (should_help(argc, argv)) {
+    Args args = parse_args(argc, argv);
+
+    if (args.help) {
         show_help();
         return 0;
     }
 
-    if (argc != 3) {
-        std::cout << "[ERROR]: Please specify a command and message!" << std::endl;
-        show_help();
-        return -1;
+    if (args.message.empty())
+        args.message = args.command;
+
+    int ret = system(args.command.c_str());
+    if (ret != 0) {
+        std::stringstream s;
+        s << "[ERROR: " << ret << "]: " << args.message;
+        args.message = s.str();
     }
 
-    std::string command = argv[1];
-    std::string message = argv[2];
-    int ret = system(command.c_str());
-    if (ret != 0)
-        message = "[ERRORED]: " + message;
-
     notify_init("Notify!");
-    NotifyNotification* n = notify_notification_new("CLIN: Command-line Notification", message.c_str(), 0);
+    NotifyNotification* n = notify_notification_new("CLIN:", args.message.c_str(), 0);
     notify_notification_set_timeout(n, 5000);
 
     if (!notify_notification_show(n, 0)) {
-        std::cerr << "notification failed" << std::endl;
+        std::cerr << "[ERROR]: notification failed" << std::endl;
         return -1;
     }
     return 0;
